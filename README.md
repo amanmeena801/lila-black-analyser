@@ -34,10 +34,10 @@ two-finger pan.
 
 ## What's in this repo
 
-- **[ARCHITECTURE.md](ARCHITECTURE.md)** — one-page overview of how the
+- **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** — one-page overview of how the
   tool is built, how the data flows, and the major tradeoffs. Written for
   people who own a product, not a codebase.
-- **[INSIGHTS.md](INSIGHTS.md)** — three findings I pulled out of the data
+- **[INSIGHTS.md](docs/INSIGHTS.md)** — three findings I pulled out of the data
   using the tool itself. Each one ties back to a specific decision a level
   designer could make on their next iteration.
 - **[docs/SYSTEM_DESIGN.md](docs/SYSTEM_DESIGN.md)** — the full, long-form
