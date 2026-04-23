@@ -1,0 +1,41 @@
+# Raw telemetry — too large for git
+data/raw/
+
+# Generated parquet + manifest ARE committed: total is ~2MB and it keeps
+# Netlify builds Python-free. Re-add the ignores below if artifacts balloon
+# past a few MB and switch Netlify to a full pipeline run instead.
+#   web/public/data/*.parquet
+#   web/public/data/manifest.json
+
+# Node — pnpm is the source of truth; never commit an npm lockfile
+node_modules/
+web/dist/
+.vite/
+*.tsbuildinfo
+package-lock.json
+yarn.lock
+# Vite writes transient config-resolution files next to vite.config.ts.
+vite.config.ts.timestamp-*.mjs
+vite.config.js.timestamp-*.mjs
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+*.egg-info/
+build/
+dist/
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Env
+.env
+.env.local

@@ -1,0 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Keep app chrome stable when scrollbars appear / disappear. */
+html {
+  scrollbar-gutter: stable;
+}
+
+/* Map canvas keeps the minimap pixel-perfect. */
+.map-canvas {
+  image-rendering: pixelated;
+}

@@ -1,0 +1,41 @@
+# Netlify build config.
+#
+# The data pipeline is NOT executed here — it depends on the raw player_data
+# dump which is too big to commit. Developers run ``make pipeline`` locally;
+# the resulting parquet + manifest are checked in under ``web/public/data/``.
+# Netlify just installs JS deps and runs Vite. See docs/DEPLOYMENT.md.
+
+[build]
+  base = "."
+  publish = "web/dist"
+  command = "corepack enable && cd web && pnpm install --frozen-lockfile && pnpm build"
+
+[build.environment]
+  NODE_VERSION = "20"
+  PNPM_VERSION = "9"
+
+# Generated data is content-addressed by deploy — cache aggressively.
+[[headers]]
+  for = "/data/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Minimap PNG/JPG assets never change.
+[[headers]]
+  for = "/minimaps/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# DuckDB-WASM ships its .wasm workers alongside the main bundle; make them
+# fetchable by our cross-origin service worker and keep the MIME types right.
+[[headers]]
+  for = "/assets/*.wasm"
+  [headers.values]
+    Content-Type = "application/wasm"
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# SPA fallback — everything is client-rendered.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

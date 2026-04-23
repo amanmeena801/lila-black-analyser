@@ -1,0 +1,61 @@
+{
+  "schema": "coord_cases_v1",
+  "cases": [
+    {
+      "map_id": "AmbroseValley",
+      "x": -370,
+      "z": -473,
+      "px": 0.0,
+      "py": 1024.0
+    },
+    {
+      "map_id": "AmbroseValley",
+      "x": 530,
+      "z": 427,
+      "px": 1024.0,
+      "py": 0.0
+    },
+    {
+      "map_id": "AmbroseValley",
+      "x": -301.45,
+      "z": -355.55,
+      "px": 77.99466666666667,
+      "py": 890.368
+    },
+    {
+      "map_id": "GrandRift",
+      "x": -290,
+      "z": -290,
+      "px": 0.0,
+      "py": 1024.0
+    },
+    {
+      "map_id": "GrandRift",
+      "x": 291,
+      "z": 291,
+      "px": 1024.0,
+      "py": 0.0
+    },
+    {
+      "map_id": "Lockdown",
+      "x": -500,
+      "z": -500,
+      "px": 0.0,
+      "py": 1024.0
+    },
+    {
+      "map_id": "Lockdown",
+      "x": 500,
+      "z": 500,
+      "px": 1024.0,
+      "py": 0.0
+    },
+    {
+      "map_id": "Lockdown",
+      "x": 0,
+      "z": 0,
+      "px": 512.0,
+      "py": 512.0
+    }
+  ]
+}

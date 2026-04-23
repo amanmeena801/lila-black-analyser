@@ -1,0 +1,92 @@
+# Continuous integration — runs the Python and Node test suites on every
+# push and pull request. Each project is isolated into its own job so
+# failures are easy to diagnose and the two can run in parallel.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  data-pipeline:
+    name: data-pipeline (python)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: data-pipeline
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: data-pipeline/requirements.txt
+
+      - name: Install deps
+        run: pip install -r requirements.txt
+
+      - name: Lint (ruff)
+        run: ruff check src tests
+
+      - name: Typecheck (mypy)
+        run: mypy src
+        continue-on-error: true # mypy is advisory until we lock the schema
+
+      - name: Tests (pytest)
+        run: pytest -q
+
+      - name: Upload coord_cases fixture (artifact contract)
+        uses: actions/upload-artifact@v4
+        with:
+          name: coord-cases
+          path: data-pipeline/fixtures/coord_cases.json
+          if-no-files-found: error
+
+  web:
+    name: web (vite + vitest)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Tests
+        run: pnpm test --run
+
+      - name: Build
+        run: pnpm build
+
+      - name: Upload Vite build output
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-dist
+          path: web/dist
+          retention-days: 7

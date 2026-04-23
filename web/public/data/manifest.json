@@ -1,0 +1,90 @@
+{
+  "event_types": [
+    "Position",
+    "BotPosition",
+    "Kill",
+    "Killed",
+    "BotKill",
+    "BotKilled",
+    "KilledByStorm",
+    "Loot"
+  ],
+  "maps": {
+    "AmbroseValley": {
+      "coord_system": {
+        "image_px": 1024,
+        "origin_x": -370,
+        "origin_z": -473,
+        "scale": 900
+      },
+      "days": [
+        "2026-02-10",
+        "2026-02-11",
+        "2026-02-12",
+        "2026-02-13",
+        "2026-02-14"
+      ],
+      "duration_ms": {
+        "max": 890,
+        "median": 361,
+        "min": 13
+      },
+      "events": 61013,
+      "image": "/minimaps/AmbroseValley.png",
+      "matches": 566,
+      "pairs": 93,
+      "slug": "ambrose_valley"
+    },
+    "GrandRift": {
+      "coord_system": {
+        "image_px": 1024,
+        "origin_x": -290,
+        "origin_z": -290,
+        "scale": 581
+      },
+      "days": [
+        "2026-02-10",
+        "2026-02-11",
+        "2026-02-12",
+        "2026-02-13",
+        "2026-02-14"
+      ],
+      "duration_ms": {
+        "max": 732,
+        "median": 422,
+        "min": 30
+      },
+      "events": 6853,
+      "image": "/minimaps/GrandRift.png",
+      "matches": 59,
+      "pairs": 8,
+      "slug": "grand_rift"
+    },
+    "Lockdown": {
+      "coord_system": {
+        "image_px": 1024,
+        "origin_x": -500,
+        "origin_z": -500,
+        "scale": 1000
+      },
+      "days": [
+        "2026-02-10",
+        "2026-02-11",
+        "2026-02-12",
+        "2026-02-13",
+        "2026-02-14"
+      ],
+      "duration_ms": {
+        "max": 825,
+        "median": 448,
+        "min": 32
+      },
+      "events": 21238,
+      "image": "/minimaps/Lockdown.jpg",
+      "matches": 171,
+      "pairs": 37,
+      "slug": "lockdown"
+    }
+  },
+  "schema_version": 1
+}
