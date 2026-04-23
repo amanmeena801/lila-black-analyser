@@ -496,10 +496,3 @@ lila-black-analyser/
 
 ---
 
-## 14. Open Questions
-
-1. Is **one match per deep-link URL** important for shareable bookmarks in v1, or can that slide to v2?
-2. Interactive hover tooltips (user_id, event, rel_ts) on every point — is Plotly.js good enough, or do we want deck.gl for larger datasets later?
-3. Should the aggregate-mode time slider be **normalized 0–100%** (my recommendation) or use **absolute ts-ms** (forcing all matches to align at t=0)? The first is fairer; the second is simpler to explain.
-4. Any private / PII concerns with shipping user_id UUIDs as static CDN files? (Internally fine; worth flagging.)
-5. Do we want a dark theme? Level designers often prefer it.
