@@ -1,7 +1,7 @@
 # LILA BLACK — Visual Level Analyser
 
 **System Design Document (v0.2)**
-Author: Himanshu · Date: 2026-04-21
+Author: Aman Meena · Date: 2026-04-21
 Changes from v0.1: (1) retargeted for **Netlify static hosting**, (2) expanded **project structure** for professional, review-friendly code, (3) replaced `match_phase` enum with a **data-driven time slider** after confirming match durations are not fixed per map.
 
 ---
