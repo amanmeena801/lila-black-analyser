@@ -107,8 +107,6 @@ rationale and a first-time Netlify setup walkthrough.
 
 ```
 .
-├── ARCHITECTURE.md      One-page overview
-├── INSIGHTS.md          Three findings about the game
 ├── README.md            You are here
 ├── Makefile             Single entry-point: make setup | pipeline | dev | build | test
 ├── netlify.toml         Build command + CDN cache headers + SPA fallback
