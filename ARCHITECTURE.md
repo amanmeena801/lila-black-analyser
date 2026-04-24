@@ -1,74 +1,86 @@
-# Architecture — one page
+# Architecture — one-page overview
 
-## What I built and why
+## What was built, and why
 
-A single web page: open the link, pick a map, and see heatmaps and kill
-markers on top of the minimap. No login, no server to babysit. The whole
-thing runs in the browser after one small data download.
+The level analyser is a single web app. A designer opens the URL, selects a map,
+and sees heatmaps and kill markers rendered on top of the minimap. No
+login is required and no backend service is operated; the application
+runs in the browser after a one-time data download.
 
-I picked this shape because designers shouldn't have to install anything,
-the five days of data (~50 MB) fits comfortably in a browser tab, and
-hosting is free on Netlify with no backend to operate. If the dataset ever
-grows past a few hundred MB this decision would need revisiting — today
-it's the lever that makes the tool feel snappy.
+This shape was chosen for three reasons. First, level designers should
+not have to install software to consult the data. Second, the five days
+of telemetry (~50 MB) fits comfortably in a modern browser. Third,
+static hosting on Netlify is free, instant to deploy, and has no
+operational footprint. Should the dataset grow beyond several hundred
+megabytes, this decision would warrant review; at the current scale it
+is the primary driver of the tool's responsiveness.
 
-## How data gets on screen
+## How data reaches the screen
 
-Raw dumps → cleaned once ahead of time → shipped with the website →
-queried live in the browser.
+The flow is three stages: raw data is cleaned once, ahead of time; the
+resulting artifacts are published with the website; the browser queries
+them locally on demand.
 
-1. **Clean-up step (Python, runs once before each deploy).** Reads the raw
-   event files, fixes the known quirks (humans vs bots, match start/end,
-   units), converts world coordinates into minimap pixel coordinates, and
-   writes one compact file per map.
-2. **Publish step (Netlify).** Every push to `main` bakes a new website and
-   parks the cleaned files on a global CDN.
-3. **Browser.** Picking a map downloads just that map's file (~10 MB).
-   After that, every filter change — event type, day, time slider — is an
-   in-memory lookup. No round-trips. That's why the UI feels "live" even
-   though nothing is running on a server anywhere.
+1. **Pre-processing (Python, build-time).** The pipeline reads the raw
+   event files, normalises known data quirks (humans versus bots,
+   inferred match start and end times, unit handling), converts world
+   coordinates into minimap pixel coordinates, and writes one compact
+   artifact per map.
+2. **Publication (Netlify).** Every push to `main` triggers a build that
+   rebuilds the site and distributes the cleaned artifacts on Netlify's
+   global CDN with immutable caching.
+3. **In-browser querying.** Selecting a map triggers a one-time download
+   of approximately 10 MB for that map. All subsequent filter changes —
+   event type, day, match, time slider — are resolved in memory without
+   network round-trips. This is what allows the interface to remain
+   responsive despite the absence of a backend.
 
-## Coordinate mapping — the tricky bit
+## Coordinate mapping
 
-Events arrive in world coordinates (meters). The minimap is a flat
-1024×1024 picture. I needed to line them up per map.
+Events are recorded in world coordinates (metres on the `x` and `z`
+axes). Each minimap is a 1024×1024 image. The analyser must place every
+event accurately on every map.
 
-The approach is the simplest thing that actually works: each map gets
-three numbers — a world origin, a world scale, and the image size — and
-the formula is a linear stretch plus a y-flip. I calibrated the numbers by
-hand: on each map, pick two easily identifiable landmarks (airstrip
-corners, building edges), read their world coordinates out of a sample
-match's `Position` events, and solve for the origin + scale that lands
-them on the right pixels. I then locked in a small shared test fixture
-with ~10 known `(x, z) → (px, py)` pairs so the Python and TypeScript
-sides both check against the same truth table and can't drift silently.
+The approach is deliberately minimal: each map is described by three
+constants — a world-space origin, a world-space scale, and the image
+dimensions — and the transform is a linear stretch combined with a
+vertical flip. Calibration was performed empirically: on each map, two
+or more recognisable landmarks (runway corners, large buildings, map
+boundaries) were identified both in a sample of `Position` events and on
+the minimap image. The origin and scale were then solved to place those
+landmarks at their correct pixel coordinates. A shared fixture of known
+`(x, z) → (px, py)` cases is consumed by both the Python pipeline and
+the TypeScript web client, guaranteeing that the two implementations
+cannot diverge without failing CI.
 
-The gotcha: minimap images go y-down, world coordinates go y-up. That sign
-flip is the single most common source of "why are all the kills on the
-wrong side of the map" bugs. It's called out in comments on both sides and
-covered in the fixtures.
+One point deserves explicit mention: minimap images use a y-down
+convention, whereas world coordinates use y-up. The vertical flip is the
+most common source of silent mapping errors and is called out in
+comments on both sides of the codebase, as well as covered by the
+shared fixture.
 
-## Assumptions where the data was ambiguous
+## Assumptions made where the data was ambiguous
 
-| What was unclear | What I assumed / did |
+| Ambiguity in the raw data | Resolution |
 |---|---|
-| The `ts` column's real-world unit (ms? frames? ticks?) | Doesn't matter — I only use `ts − match_start_ts`, so the slider shows "match time" without claiming seconds |
-| Match durations vary 24–68× on every map | Built a time slider, not an early/mid/late enum |
-| `user_id` mixes UUIDs (humans) and numeric IDs (bots) | Anything all-numeric = bot |
-| `Kill` records the killer's spot; `BotKill` records the bot victim's spot | Pipeline pairs them up so "kill zones" and "death zones" each mean exactly one thing |
-| No explicit "match started" / "ended" events | Took the first and last event in each match |
-| Very short matches (< 30 ms) look like broken rounds | Kept them in — designers might want to see hot-drop deaths; it's one filter away to exclude |
-| Map names spelled inconsistently across files | Canonicalised once at ingest |
+| The `ts` column's real-world unit (milliseconds, ticks, or frames) is not documented | The tool uses `ts − match_start_ts` only, labelled "match time" on the slider, making the absolute unit irrelevant to the user |
+| Match durations vary by a factor of 24–68 within a single map | The time slider operates on per-match duration, rather than a fixed early/mid/late enum |
+| `user_id` mixes UUID strings (humans) and numeric strings (bots) with no explicit flag | A regex-based classifier derives an `is_bot` boolean during ingest |
+| `Kill` records the killer's position; `BotKill` records the bot victim's position — the two events are not symmetrical | The pipeline joins them into explicit killer-to-victim pairs, so kill-zone and death-zone views each have unambiguous semantics |
+| No explicit match-start or match-end events exist in the data | The first and last event per match are used to derive `match_start_ts`, `match_end_ts`, and `duration_ms` |
+| A small number of matches have durations under 30 ms, likely representing incomplete rounds | These are retained — they may reveal hot-drop mortality — but can be filtered out in one click when the signal matters |
+| Map names appear inconsistently across file paths (e.g. `GrandRift` vs `Grand_Rift`) | Canonicalised to PascalCase at ingest; filename slugs are handled separately |
 
-Full list is in `docs/DATA_ANOMALIES.md`.
+A complete catalogue of anomalies and their handling is documented in
+[`docs/DATA_ANOMALIES.md`](docs/DATA_ANOMALIES.md).
 
 ## Major tradeoffs
 
-| Decision | Alternative | Why this one |
+| Decision | Alternative considered | Rationale |
 |---|---|---|
-| Run the query engine inside the browser | Spin up a backend API | Zero servers to operate; filter changes feel instant; the dataset fits in memory today |
-| Commit the cleaned data files to git | Regenerate them on every Netlify build | Builds stay Python-free and under 60s; every deploy is a reviewable data snapshot |
-| One all-in-one chart library | Specialised GL libs like deck.gl | Covers every v1 view with a single dependency; revisit when point counts go 10× |
-| Time slider | Fixed early / mid / late buckets | Match durations vary too much — a slider is honest, presets give back the convenience |
-| Pre-compute kill ↔ death pairings at build time | Join them on the fly in the browser | Cheap to do once; wasteful to redo on every UI click |
-| Own the map's zoom/pan state in the app | Let the chart library manage its own | Gave us pinch, two-finger pan, click-drag pan, and +/−/reset buttons that all agree with each other |
+| Query the data in the browser with DuckDB-WASM | Operate a backend API | Eliminates server operation and cold-start latency; the dataset fits in memory; filter changes remain instantaneous |
+| Commit cleaned data artifacts to the repository | Regenerate them on every Netlify build | Keeps the build Python-free and under 60 seconds; every deployment is an auditable snapshot of the data that shipped |
+| Use a single general-purpose charting library (Plotly) | Adopt specialised WebGL libraries such as deck.gl | Covers every view requirement with a single dependency; worth revisiting only if point counts grow by an order of magnitude |
+| Provide a continuous time slider | Use fixed early / mid / late phase buckets | Match durations vary too much for fixed buckets to be meaningful; presets at 33% / 66% / 100% restore the convenience |
+| Pre-compute killer-to-victim pairings in the pipeline | Compute them on demand in the browser | Pairing is an `O(n²)` within-match self-join; performing it once at build time is far more efficient than repeating it on every filter change |
+| Manage map viewport state inside the React application | Rely on the charting library's internal drag-pan state | A single controlled viewport lets pinch-zoom, two-finger pan, click-drag, and explicit zoom controls share one consistent state |
