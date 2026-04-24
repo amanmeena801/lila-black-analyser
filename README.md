@@ -1,77 +1,87 @@
 # LILA BLACK — Visual Level Analyser
 
-An internal tool for the LILA BLACK level-design team. It turns five days
-of raw gameplay telemetry into answers about each map — in seconds,
-without writing a line of SQL.
+An internal web tool for the LILA BLACK level-design team. It transforms
+five days of raw gameplay telemetry into spatial insights about each map,
+accessible through a browser without requiring SQL knowledge or engineering
+support.
 
-**Open it →** <https://gamelevelanalyser.netlify.app/>
+**Live deployment:** <https://gamelevelanalyser.netlify.app/>
 
 ---
 
-## Why this exists
+## Purpose
 
-Level designers iterate faster when they can see what actually happened on
-their maps. Today that answer lives in parquet dumps on someone's laptop,
-and getting to a kill heatmap means pinging an engineer. This tool turns
-those dumps into a browser page a designer can drive themselves.
+Level designers depend on post-match data to validate and iterate on their
+designs. Previously, that data existed only as parquet dumps that required
+engineering assistance to query. This tool removes that dependency by
+providing a self-serve interface in which designers can interrogate the
+same telemetry directly on top of each map's minimap.
 
-In the live tool, a designer can:
+The tool supports the following workflows:
 
-- See where players kill and where they die on each map, as a heatmap or
-  as individual points.
-- See where loot is getting picked up — and, critically, where it isn't.
-- Watch traffic density build up over a match to find the corridors
-  players actually use.
-- Scrub any single match from drop to final circle with a time slider, or
-  play it back at 2× / 10× speed.
-- Open the Kill Feed panel to see killer → victim pairings drawn as lines
-  across the map.
-- Flip between the three maps (Ambrose Valley, Grand Rift, Lockdown) and
-  five days of data (Feb 10–14) without a reload.
+- Visualising where players kill and die on each map, as heatmaps or as
+  individual event markers.
+- Identifying loot distribution — where players pick items up, and which
+  regions of the map are under-utilised.
+- Observing player traffic density to surface the corridors and routes
+  players rely on.
+- Scrubbing any individual match from initial drop to final circle using a
+  time slider, with optional 2× or 10× playback.
+- Inspecting killer-to-victim pairings through a Kill Feed side panel,
+  rendered as connection lines across the map.
+- Switching between the three maps (Ambrose Valley, Grand Rift, Lockdown)
+  and five days of data (February 10–14) without reloading.
 
-All of it sits on top of the map's own minimap, with pinch-zoom and
-two-finger pan.
+All views render on top of each map's native minimap and support
+pinch-zoom and two-finger pan.
 
-## What's in this repo
+## Repository contents
 
-- **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** — one-page overview of how the
-  tool is built, how the data flows, and the major tradeoffs. Written for
-  people who own a product, not a codebase.
-- **[INSIGHTS.md](docs/INSIGHTS.md)** — three findings I pulled out of the data
-  using the tool itself. Each one ties back to a specific decision a level
-  designer could make on their next iteration.
-- **[docs/SYSTEM_DESIGN.md](docs/SYSTEM_DESIGN.md)** — the full, long-form
-  design doc if you want the receipts.
-- **[docs/DATA_ANOMALIES.md](docs/DATA_ANOMALIES.md)** — every quirk in
-  the raw dump and how the pipeline handles it.
-- **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** — how Netlify rebuilds the
-  site on every push and why the data artifacts are committed to git.
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** — a one-page overview of the
+  system, data flow, coordinate mapping, assumptions, and major
+  engineering tradeoffs. Written to be approachable for a product
+  audience.
+- **[INSIGHTS.md](INSIGHTS.md)** — three findings derived from the data
+  using the tool itself, each mapped to concrete level-design actions and
+  the metrics they would affect.
+- **[docs/SYSTEM_DESIGN.md](docs/SYSTEM_DESIGN.md)** — the complete
+  long-form design document.
+- **[docs/DATA_ANOMALIES.md](docs/DATA_ANOMALIES.md)** — a catalogue of
+  irregularities in the raw data and how the pipeline resolves them.
+- **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** — Netlify build
+  configuration, caching policy, and first-time setup instructions.
 
-## Using the live tool
+## Using the hosted application
 
-Just open <https://gamelevelanalyser.netlify.app/>. Nothing to install, no
-login, no backend. The first map you pick downloads ~10 MB of cleaned data
-into your browser and caches it for a year; everything after that is
-instant.
+Open <https://gamelevelanalyser.netlify.app/>. No installation, account,
+or backend is required. Selecting a map downloads approximately 10 MB of
+pre-processed data into the browser, cached aggressively on the CDN;
+subsequent interactions are local and instantaneous.
 
-## Running it on your laptop (for engineers)
+## Running locally
 
-If you want to run it locally, say against a fresh data dump:
+For engineers working against a fresh data dump or iterating on the tool:
 
 ```sh
-make setup            # one-time — installs Python + Node deps
-make pipeline         # processes data/raw/player_data → cleaned per-map files
-make dev              # opens http://localhost:5173
+make setup            # Installs Python and Node dependencies
+make pipeline         # Processes data/raw/player_data into cleaned per-map artifacts
+make dev              # Starts the Vite dev server at http://localhost:5173
 ```
 
-Prereqs: Python 3.11+, Node 20+, pnpm 9+ (a `corepack enable` takes care
-of pnpm). Unzip `player_data.zip` into `data/raw/` first.
+### Prerequisites
 
-No environment variables are required. The tool is fully self-contained
-— `.env` files are gitignored in case downstream users want to add
-secrets later, but v1 doesn't need any.
+- Python 3.11 or later
+- Node 20 or later
+- pnpm 9 or later (available via `corepack enable`)
+- The raw `player_data/` directory, extracted from `player_data.zip` into
+  `data/raw/`
 
-### Tests, lint, typecheck
+### Environment variables
+
+None are required. The application is fully self-contained. A `.env`
+pattern is reserved in `.gitignore` for future extensions.
+
+### Tests, linting, type checking
 
 ```sh
 make test             # pytest + vitest
@@ -79,40 +89,44 @@ make lint             # ruff + eslint
 make typecheck        # mypy + tsc
 ```
 
-GitHub Actions runs all three on every push and pull request.
+GitHub Actions executes all three on every push and pull request.
 
-### Production build (what Netlify runs)
+### Production build
 
 ```sh
-make build            # pipeline + vite build → web/dist
-cd web && pnpm preview   # serves web/dist at http://localhost:4173
+make build            # Runs the pipeline and produces web/dist/
+cd web && pnpm preview   # Serves the production build at http://localhost:4173
 ```
 
-## Tech stack (one line)
+## Technology stack
 
-React + TypeScript + Vite SPA, Plotly.js for the map overlays, DuckDB-WASM
-to query Apache Parquet in the browser, Python 3.11 + DuckDB for the
-build-time ETL, Tailwind for styling, Zustand for state, Netlify for
-hosting, GitHub Actions for CI. Why each one was picked is in
+React with TypeScript and Vite for the single-page application, Plotly.js
+for map overlay rendering, DuckDB-WASM for client-side parquet queries,
+Tailwind CSS for styling, Zustand for state management, Python 3.11 with
+DuckDB for the build-time ETL, Netlify for hosting, and GitHub Actions for
+continuous integration. Rationale for each choice is documented in
 [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Deployment
 
-Pushes to `main` auto-deploy to Netlify. The cleaned data artifacts (~2 MB
-total) are committed to the repo so the build stays Python-free and under
-60 seconds — see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for the
-rationale and a first-time Netlify setup walkthrough.
+The `main` branch deploys automatically to Netlify on every push. Cleaned
+data artifacts (approximately 2 MB in aggregate) are committed to the
+repository so that Netlify builds remain Python-free and complete in under
+60 seconds. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for the complete
+rationale and first-time configuration guidance.
 
-## Repo layout
+## Repository layout
 
 ```
 .
-├── README.md            You are here
-├── Makefile             Single entry-point: make setup | pipeline | dev | build | test
-├── netlify.toml         Build command + CDN cache headers + SPA fallback
+├── ARCHITECTURE.md      One-page system overview
+├── INSIGHTS.md          Three data-backed findings
+├── README.md            This document
+├── Makefile             Single entry point: setup | pipeline | dev | build | test
+├── netlify.toml         Build command, cache headers, SPA fallback
 ├── data-pipeline/       Python build-time ETL
-├── web/                 React SPA (what Netlify ships)
-├── data/raw/            Gitignored — drop the unzipped player_data/ here
-├── docs/                Extended design doc, ADRs, anomalies, deployment
-└── scripts/             Build / verify helpers
+├── web/                 React SPA deployed by Netlify
+├── data/raw/            Gitignored — destination for the raw player_data/ dump
+├── docs/                Extended design documentation, ADRs, and anomalies
+└── scripts/             Build and verification helpers
 ```
